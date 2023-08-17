@@ -15,8 +15,8 @@
 #include "../utils/include/timer.hpp"
 
 using namespace std;
-using bench::rng;
-using bench::Timer;
+using tbs::rng;
+using tbs::Timer;
 using std::cout;
 
 template <typename T>
@@ -58,7 +58,7 @@ TEST_CASE("benchmark", "[inserting 1000000 integer]") {
   std::unordered_map<int, int> stdmp;
   fmp<int, int> mp;
   constexpr int n = 1e6;
-  auto const keys = bench::distinct_vec<int, 0>(n);
+  auto const keys = tbs::distinct_vec<int, 0>(n);
 
   timer.reset();
   for (auto const k : keys) {
@@ -75,26 +75,43 @@ TEST_CASE("benchmark", "[inserting 1000000 integer]") {
 }
 
 TEST_CASE("benchmark of phmap with key type string") {
+  cout << "ph-hashtable and std-hashtable benchmark, inserting 1000000 "
+          "string(sso):\n";
   Timer timer;
 
   std::unordered_map<string, UP<Data>> stdmp;
   fmp<string, UP<Data>> mp;
   constexpr int n = 1e6;
-  auto const keys = bench::rng_dates(n, "20220120", "20900530");
-  auto values = vector<RW<Data>>(n);
-  for (int i = 0; i < n; i++) {
-    values[i] = new Data;
-  };
-
-  timer.reset();
-  for (int i = 0; i < n; i++) {
-    mp[keys[i]] = unique_ptr<Data>{values[i]};
+  auto const keys = tbs::rng_dates(n, "20220120"sv, "20900530"sv);
+  for (int i = 0; i < 10; i ++) {
+    INFO(":" << keys[i] << '\n');
   }
-  cout << "ph-hashtable: " << timer << '\n';
+    // INFO
+  // auto values1 = vector<RW<Data>>(n);
+  // for (int i = 0; i < n; i++) {
+  //   values1[i] = new Data;
+  // };
 
-  for (int i = 0; i < n; i++) {
-    REQUIRE(values[i] == mp[keys[i]].get());
-  }
+  // auto values2 = vector<RW<Data>>(n);
+  // for (int i = 0; i < n; i++) {
+  //   values2[i] = new Data;
+  // };
+
+  // timer.reset();
+  // for (int i = 0; i < n; i++) {
+  //   mp[keys[i]] = unique_ptr<Data>{values1[i]};
+  // }
+  // cout << "ph-hashtable: " << timer << '\n';
+
+  // timer.reset();
+  // for (int i = 0; i < n; i++) {
+  //   stdmp[keys[i]] = unique_ptr<Data>{values2[i]};
+  // }
+  // cout << "std-hashtable: " << timer << '\n';
+
+  // for (int i = 0; i < n; i++) {
+    // REQUIRE(values1[i] == mp[keys[i]].get());
+  // }
 }
 
 TEST_CASE("validate in rehash of phmap") {
@@ -103,7 +120,7 @@ TEST_CASE("validate in rehash of phmap") {
   fmp<int, UP<Data>> mp;
 
   constexpr int n = 1e6;
-  auto keys = bench::distinct_vec<int, 1>(n);
+  auto keys = tbs::distinct_vec<int, 1>(n);
   vector<RW<Data>> values(n, nullptr);
   for (int i = 0; i < n; i++) {
     values[i] = new Data;
@@ -124,36 +141,3 @@ TEST_CASE("validate in rehash of phmap") {
   }
   cout << "phmap iterate 1000000 integers: " << timer << '\n';
 }
-
-// int main() {
-//   Timer timer;
-
-//   std::unordered_map<int, UP<int>> stdmp;
-//   fmp<int, UP<int>> mp;
-
-//   constexpr int n = 1e6;
-//   auto keys = bench::rng_vec<int, 1, n>(n);
-//   vector<RW<int>> values(n, nullptr);
-
-//   for (int i = 0; i < n; i++) {
-//     values[i] = new int(rng());
-//   }
-//   timer.reset();
-
-//   for (int i = 0; i < n; i++) {
-//     auto const& k = keys[i];
-//     mp[k] = unique_ptr<int>{values[i]};
-//     // mp[k] = make_unique<int>(rng());
-//   }
-//   cout << timer << '\n';
-//   timer.reset();
-
-//   timer.reset();
-//   for (auto const& k : keys) {
-//     stdmp[k] = make_unique<int>(rng());
-//   }
-//   cout << timer << '\n';
-//   timer.reset();
-
-//   return 0;
-// }

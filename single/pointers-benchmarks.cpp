@@ -11,7 +11,7 @@
 #include "../utils/include/timer.hpp"
 
 using namespace std;
-using bench::Timer;
+using tbs::Timer;
 
 struct Data {
   string symbol{"000001.SZ"};

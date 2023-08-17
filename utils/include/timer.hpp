@@ -4,7 +4,7 @@
 #include <chrono>
 #include <concepts>
 
-namespace bench {
+namespace tbs {
 
 using nano = std::chrono::nanoseconds;
 using micro = std::chrono::microseconds;
@@ -52,6 +52,6 @@ class Timer {
   std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
 };
 
-}  // namespace bench
+}  // namespace tbs
 
 #endif  // BENCH_TIMER_HPP

@@ -1,8 +1,7 @@
-#ifndef BENCH_TIMER_HPP
-#define BENCH_TIEMR_HPP
+#ifndef TBS_TIMER_HPP
+#define TBS_TIEMR_HPP
 
 #include <algorithm>
-#include <chrono>
 #include <random>
 #include <ranges>
 #include <string_view>
@@ -11,9 +10,7 @@
 #include <vector>
 #include "utils.hpp"
 
-namespace bench {
-
-using ymd = std::chrono::year_month_day;
+namespace tbs {
 
 static std::random_device seed_random_device;
 static std::mt19937 engine(seed_random_device());
@@ -77,15 +74,17 @@ static std::vector<T> distinct_vec(size_t size, int64_t l) {
 
 ///
 static std::vector<std::string> rng_dates(size_t size,
-                                          string_view l,
-                                          string_view r) {
+                                          std::string_view l,
+                                          std::string_view r) {
   std::vector<std::string> res(size);
-  auto const lday = svtoymd(l);
-  auto const rday = svtoymd(r);
-  auto const diff = rday - lday;
+  auto const lymd = svtoymd(l);
+  auto const rymd = svtoymd(r);
+  auto const diff = (date::sys_days{rymd} - date::sys_days{lymd}).count();
   std::ranges::generate(res, [&] {
-    return lday + std::chrono::days{engine64() % diff.operator unsigned int()};
+    auto const ymd = YMD{date::sys_days(lymd) + date::days{engine64() % diff}};
+    return ymdtostr(ymd);
   });
+  return res;
 }
 
 /// TODO: random graph
@@ -109,6 +108,6 @@ static Graph<Node> rng_connected_graph(size_t size) {
   return {};
 }
 
-}  // namespace bench
+}  // namespace tbs
 
-#endif  // BENCH_RANDOM_HPP
+#endif  // TBS_RANDOM_HPP
