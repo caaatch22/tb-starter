@@ -1,10 +1,10 @@
 #ifndef TBS_UTILS_HPP
 #define TBS_UTILS_HPP
 
-#include <charconv>
 #include <date/date.h>
+#include <fmt/format.h>
+#include <charconv>
 #include <string_view>
-#include <format>
 #include <system_error>
 #include <tl/expected.hpp>
 
@@ -34,12 +34,13 @@ YMD svtoymd(std::string_view sv) {
   auto const yi = svtoi(sv.substr(0, 4)).value();
   auto const mi = svtoi(sv.substr(4, 2)).value();
   auto const di = svtoi(sv.substr(6, 2)).value();
-  return YMD{date::year(yi), date::month(mi),
-             date::day(di)};
+  return YMD{date::year(yi), date::month(mi), date::day(di)};
 };
 
 std::string ymdtostr(YMD ymd) {
-  return std::format("{:4d}{:2d}{:2d}", ymd.year().operator int(), ymd.month().operator unsigned int(), ymd.day().operator unsigned int());
+  return fmt::format("{:4d}{:2d}{:2d}", ymd.year().operator int(),
+                     ymd.month().operator unsigned int(),
+                     ymd.day().operator unsigned int());
 }
 
 }  // namespace tbs
