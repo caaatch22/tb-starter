@@ -11,13 +11,14 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include "../utils/include/random.hpp"
-#include "../utils/include/timer.hpp"
+#include "../tbs/include/random.hpp"
+#include "../tbs/include/timer.hpp"
+#include "../tbs/include/utils.hpp"
 
 using namespace std;
+using std::cout;
 using tbs::rng;
 using tbs::Timer;
-using std::cout;
 
 template <typename T>
 using UP = std::unique_ptr<T>;
@@ -31,23 +32,7 @@ using RW = T*;
 template <typename K, typename V>
 using fmp = phmap::flat_hash_map<K, V>;
 
-struct Data {
-  string symbol{"000001.SZ"};
-  int64_t eamcode{13000000000020020};
-  Data() = default;
-  Data(string smb, int64_t code) : symbol(std::move(smb)), eamcode(code) {}
-};
-
-struct NonCopyAndNonMove {
-  string symbol{"000001.SZ"};
-  int64_t eamcode{13000000000020020};
-  NonCopyAndNonMove() = default;
-
-  NonCopyAndNonMove(NonCopyAndNonMove const&) = delete;
-  NonCopyAndNonMove(NonCopyAndNonMove&&) = delete;
-  NonCopyAndNonMove& operator=(NonCopyAndNonMove const&) = delete;
-  NonCopyAndNonMove& operator=(NonCopyAndNonMove&&) = delete;
-};
+using Data = tbs::MockData;
 
 TEST_CASE("benchmark", "[inserting 1000000 integer]") {
   cout << "ph-hashtable and std-hashtable benchmark, inserting 1000000 "
@@ -82,36 +67,29 @@ TEST_CASE("benchmark of phmap with key type string") {
   std::unordered_map<string, UP<Data>> stdmp;
   fmp<string, UP<Data>> mp;
   constexpr int n = 1e6;
-  auto const keys = tbs::rng_dates(n, "20220120"sv, "20900530"sv);
-  for (int i = 0; i < 10; i ++) {
-    INFO(":" << keys[i] << '\n');
+  auto const keys = tbs::rng_dates(n, "20220120"sv, "90900530"sv);
+
+  auto values1 = vector<RW<Data>>(n);
+  for (int i = 0; i < n; i++) {
+    values1[i] = new Data;
+  };
+
+  auto values2 = vector<RW<Data>>(n);
+  for (int i = 0; i < n; i++) {
+    values2[i] = new Data;
+  };
+
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    mp[keys[i]] = unique_ptr<Data>{values1[i]};
   }
-    // INFO
-  // auto values1 = vector<RW<Data>>(n);
-  // for (int i = 0; i < n; i++) {
-  //   values1[i] = new Data;
-  // };
+  cout << "ph-hashtable: " << timer << '\n';
 
-  // auto values2 = vector<RW<Data>>(n);
-  // for (int i = 0; i < n; i++) {
-  //   values2[i] = new Data;
-  // };
-
-  // timer.reset();
-  // for (int i = 0; i < n; i++) {
-  //   mp[keys[i]] = unique_ptr<Data>{values1[i]};
-  // }
-  // cout << "ph-hashtable: " << timer << '\n';
-
-  // timer.reset();
-  // for (int i = 0; i < n; i++) {
-  //   stdmp[keys[i]] = unique_ptr<Data>{values2[i]};
-  // }
-  // cout << "std-hashtable: " << timer << '\n';
-
-  // for (int i = 0; i < n; i++) {
-    // REQUIRE(values1[i] == mp[keys[i]].get());
-  // }
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    stdmp[keys[i]] = unique_ptr<Data>{values2[i]};
+  }
+  cout << "std-hashtable: " << timer << '\n';
 }
 
 TEST_CASE("validate in rehash of phmap") {

@@ -87,6 +87,25 @@ static std::vector<std::string> rng_dates(size_t size,
   return res;
 }
 
+template <size_t N>
+struct StringLiteral {
+  constexpr StringLiteral(const char (&str)[N]) { std::copy_n(str, N, value); }
+  char value[N];
+};
+
+// static std::vector<std::string> dates_between(std::string_view l,
+//                                               std::string_view r) {
+//   auto const lymd = svtoymd(l);
+//   auto const rymd = svtoymd(r);
+//   auto const diff = (date::sys_days{rymd} - date::sys_days{lymd}).count();
+//   std::vector<std::string> res(diff);
+//   std::ranges::generate(res, [&] {
+//     auto const ymd = YMD{date::sys_days(lymd) + date::days{engine64() %
+//     diff}}; return ymdtostr(ymd);
+//   });
+//   return res;
+// }
+
 /// TODO: random graph
 template <typename T>
 concept Hashable = requires(T a) {

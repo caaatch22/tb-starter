@@ -7,8 +7,8 @@
 #include <thread>
 #include <utility>
 #include <vector>
-#include "../utils/include/random.hpp"
-#include "../utils/include/timer.hpp"
+#include "../tbs/include/random.hpp"
+#include "../tbs/include/timer.hpp"
 
 using namespace std;
 using tbs::Timer;
