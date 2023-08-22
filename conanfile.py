@@ -26,6 +26,7 @@ class GsfConan(ConanFile):
 
     def requirements(self):
         self.requires("fmt/10.1.0")
+        self.requires("bshoshany-thread-pool/3.5.0")
         self.requires("date/3.0.1")
         self.requires("catch2/2.13.9")
         self.requires("parallel-hashmap/1.37")

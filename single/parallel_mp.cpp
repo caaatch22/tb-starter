@@ -1,13 +1,16 @@
 #define CATCH_CONFIG_MAIN
 
 #include <parallel_hashmap/phmap.h>
+#include <BS_thread_pool.hpp>
 #include <algorithm>
 #include <catch2/catch.hpp>
 #include <iostream>
 #include <memory>
 #include <numeric>
 #include <ranges>
+#include <set>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -31,6 +34,9 @@ using RW = T*;
 
 template <typename K, typename V>
 using fmp = phmap::flat_hash_map<K, V>;
+
+template <typename K, typename V>
+using pfmp = phmap::parallel_flat_hash_map<K, V>;
 
 template <typename K, typename V>
 using nodemp = phmap::node_hash_map<K, V>;
@@ -248,6 +254,163 @@ TEST_CASE("benchmark with big value") {
   cout << '\n';
 }
 
+TEST_CASE("usage and benchmark for parallel version of flat_hash_map") {
+  Timer timer;
+  cout << "inserting 1000000 integers in one thread:\n";
+  fmp<int, int> mp;
+  pfmp<int, int> pmp;
+
+  const int n = 1e6;
+  auto const keys = tbs::distinct_vec<int, 0>(n);
+
+  timer.reset();
+  for (auto const k : keys) {
+    mp[k] = rng();
+  }
+  cout << "flat-hashtable: " << timer << '\n';
+
+  timer.reset();
+  for (auto const k : keys) {
+    pmp[k] = rng();
+  }
+  cout << "parallel-flat-hashtable: " << timer << '\n';
+  cout << '\n';
+}
+
+TEST_CASE("parallel version of parallel-hash-map") {
+  cout << "inserting 1000000 integers without lock in 8 threads" << '\n';
+  Timer timer;
+  pfmp<int, int> pmp;
+  fmp<int, int> mp;
+
+  const int n = 1e6;
+  auto const keys = tbs::distinct_vec<int, 0>(n);
+
+  constexpr int64_t num_threads = 8;
+  auto thread_fn = [](pfmp<int, int>& pmp, vector<int> const& keys,
+                      int thread_idx) {
+    size_t modulo = pmp.subcnt() / 8;
+    for (int64_t i = 0; i < keys.size(); ++i) {
+      int key = keys[i];
+      size_t hashval = pmp.hash(key);
+      size_t idx = pmp.subidx(hashval);
+      if (idx / modulo ==
+          thread_idx)  // if the submap is suitable for this thread
+      {
+        pmp[key] = rng();  // insert the value
+        // ++(num_keys[thread_idx]);  // increment count of inserted values
+      }
+    }
+  };
+
+  std::unique_ptr<std::thread> threads[num_threads];
+  timer.reset();
+  for (int i = 0; i < num_threads; i++) {
+    threads[i].reset(
+        new std::thread(thread_fn, std::ref(pmp), std::cref(keys), i));
+  }
+  timer.reset();
+  for (int64_t i = 0; i < num_threads; ++i)
+    threads[i]->join();
+  cout << "parallel-flat-map: " << timer << '\n';
+
+  timer.reset();
+  for (auto const& key : keys) {
+    mp[key] = rng();
+  }
+  std::cout << "inserting with std::mutex: " << timer << '\n';
+  cout << '\n';
+}
+
+TEST_CASE("parallel-hash-map") {
+  cout << "inserting 1000000 integers with locks in 8 threads" << '\n';
+  Timer timer;
+
+  fmp<int, int> fmp;
+  std::mutex mut;
+
+  phmap::parallel_flat_hash_map<
+      int, int, phmap::priv::hash_default_hash<int>,
+      phmap::priv::hash_default_eq<int>,
+      phmap::priv::Allocator<std::pair<const int, int>>, 4, std::mutex>
+      mp;
+
+  phmap::parallel_flat_hash_map<
+      int, int, phmap::priv::hash_default_hash<int>,
+      phmap::priv::hash_default_eq<int>,
+      phmap::priv::Allocator<std::pair<int const, int>>, 4, std::shared_mutex>
+      smp;
+
+  constexpr int n = 1e6;
+  auto const keys = tbs::distinct_vec<int, 0>(n);
+
+  BS::thread_pool pool(8);
+
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      mp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::mutex: " << timer << '\n';
+
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      smp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::shared_mutex: " << timer << '\n';
+
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      std::lock_guard lock(mut);
+      fmp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "flat_map with std::mutex by hand: " << timer << '\n';
+
+  fmp.clear();
+  mp.clear();
+  smp.clear();
+
+  auto const rkeys = tbs::rng_vec<int, 0, n>(n);
+  auto s = std::set<int>(rkeys.begin(), rkeys.end());
+  cout << "all size = " << rkeys.size() << " distinct key size = " << s.size()
+       << '\n';
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      mp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::mutex: " << timer << '\n';
+
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      smp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::shared_mutex: " << timer << '\n';
+
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      std::lock_guard lock(mut);
+      fmp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "flat_map with std::mutex by hand: " << timer << '\n';
+}
+
 TEST_CASE("validate in rehash of phmap") {
   Timer timer;
 
@@ -273,5 +436,5 @@ TEST_CASE("validate in rehash of phmap") {
   for (int i = 0; i < n; i++) {
     dummy += mp[keys[i]]->eamcode;
   }
-  cout << "phmap iterate 1000000 integers: " << timer << '\n';
+  // cout << "phmap iterate 1000000 integers: " << timer << '\n';
 }
