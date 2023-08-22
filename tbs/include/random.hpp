@@ -87,6 +87,20 @@ static std::vector<std::string> rng_dates(size_t size,
   return res;
 }
 
+static std::string rng_string(size_t len) {
+  std::string s(len, ' ');
+  std::ranges::generate(s, [] { return 'a' + rng() % 26; });
+  return s;
+}
+
+static std::vector<std::string> rng_strings(size_t size, size_t len) {
+  std::vector<std::string> res(size);
+  for (auto& s : res) {
+    s = rng_string(len);
+  }
+  return res;
+}
+
 template <size_t N>
 struct StringLiteral {
   constexpr StringLiteral(const char (&str)[N]) { std::copy_n(str, N, value); }
