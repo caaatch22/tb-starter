@@ -97,16 +97,18 @@ struct NonCopy {
   std::string symbol{"000001.SZ"};
   int64_t eamcode{13000000000020020LL};
   NonCopy() = default;
-
   NonCopy(NonCopy const&) = delete;
   NonCopy& operator=(NonCopy const&) = delete;
+  NonCopy& operator=(NonCopy&& rhs) = default;
+  NonCopy(NonCopy&& rhs) = default;
 };
 
 struct NonMove {
   std::string symbol{"000001.SZ"};
   int64_t eamcode{13000000000020020LL};
   NonMove() = default;
-
+  NonMove(NonMove const&) = default;
+  NonMove& operator=(NonMove const&) = default;
   NonMove(NonMove&&) = delete;
   NonMove& operator=(NonMove&&) = delete;
 };

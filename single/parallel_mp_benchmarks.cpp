@@ -355,120 +355,151 @@ TEST_CASE("parallel version of parallel-hash-map") {
   cout << '\n';
 }
 
-// TEST_CASE("parallel-hash-map") {
-//   cout << "inserting 1000000 integers with locks in 8 threads" << '\n';
-//   Timer timer;
+TEST_CASE("parallel-hash-map") {
+  cout << "inserting 1000000 integers with locks in 8 threads" << '\n';
+  Timer timer;
 
-//   fmp<int, int> fmp;
-//   std::mutex mut;
+  fmp<int, int> fmp;
+  std::mutex mut;
 
-//   phmap::parallel_flat_hash_map<
-//       int, int, phmap::priv::hash_default_hash<int>,
-//       phmap::priv::hash_default_eq<int>,
-//       phmap::priv::Allocator<std::pair<const int, int>>, 4, std::mutex>
-//       mp;
+  phmap::parallel_flat_hash_map<
+      int, int, phmap::priv::hash_default_hash<int>,
+      phmap::priv::hash_default_eq<int>,
+      phmap::priv::Allocator<std::pair<const int, int>>, 4, std::mutex>
+      mp;
 
-//   phmap::parallel_flat_hash_map<
-//       int, int, phmap::priv::hash_default_hash<int>,
-//       phmap::priv::hash_default_eq<int>,
-//       phmap::priv::Allocator<std::pair<int const, int>>, 4,
-//       std::shared_mutex> smp;
+  phmap::parallel_flat_hash_map<
+      int, int, phmap::priv::hash_default_hash<int>,
+      phmap::priv::hash_default_eq<int>,
+      phmap::priv::Allocator<std::pair<int const, int>>, 4,
+      std::shared_mutex> smp;
 
-//   constexpr int n = 1e6;
-//   auto const keys = tbs::distinct_vec<int, 0>(n);
+  constexpr int n = 1e6;
+  auto const keys = tbs::distinct_vec<int, 0>(n);
 
-//   BS::thread_pool pool(8);
+  BS::thread_pool pool(8);
 
-//   timer.reset();
-//   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
-//     for (size_t i = l; i < r; i++) {
-//       mp[keys[i]] = rng();
-//     }
-//   });
-//   pool.wait_for_tasks();
-//   cout << "parallel_flat_map with std::mutex: " << timer << '\n';
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      mp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::mutex: " << timer << '\n';
 
-//   timer.reset();
-//   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
-//     for (size_t i = l; i < r; i++) {
-//       smp[keys[i]] = rng();
-//     }
-//   });
-//   pool.wait_for_tasks();
-//   cout << "parallel_flat_map with std::shared_mutex: " << timer << '\n';
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      smp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::shared_mutex: " << timer << '\n';
 
-//   timer.reset();
-//   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
-//     for (size_t i = l; i < r; i++) {
-//       std::lock_guard lock(mut);
-//       fmp[keys[i]] = rng();
-//     }
-//   });
-//   pool.wait_for_tasks();
-//   cout << "flat_map with std::mutex by hand: " << timer << '\n';
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      std::lock_guard lock(mut);
+      fmp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "flat_map with std::mutex by hand: " << timer << '\n';
 
-//   fmp.clear();
-//   mp.clear();
-//   smp.clear();
+  fmp.clear();
+  mp.clear();
+  smp.clear();
 
-//   auto const rkeys = tbs::rng_vec<int, 0, n>(n);
-//   auto s = std::set<int>(rkeys.begin(), rkeys.end());
-//   cout << "all size = " << rkeys.size() << " distinct key size = " <<
-//   s.size()
-//        << '\n';
-//   timer.reset();
-//   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
-//     for (size_t i = l; i < r; i++) {
-//       mp[keys[i]] = rng();
-//     }
-//   });
-//   pool.wait_for_tasks();
-//   cout << "parallel_flat_map with std::mutex: " << timer << '\n';
+  auto const rkeys = tbs::rng_vec<int, 0, n>(n);
+  auto s = std::set<int>(rkeys.begin(), rkeys.end());
+  cout << "all size = " << rkeys.size() << " distinct key size = " <<
+  s.size()
+       << '\n';
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      mp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::mutex: " << timer << '\n';
 
-//   timer.reset();
-//   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
-//     for (size_t i = l; i < r; i++) {
-//       smp[keys[i]] = rng();
-//     }
-//   });
-//   pool.wait_for_tasks();
-//   cout << "parallel_flat_map with std::shared_mutex: " << timer << '\n';
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      smp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "parallel_flat_map with std::shared_mutex: " << timer << '\n';
 
-//   timer.reset();
-//   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
-//     for (size_t i = l; i < r; i++) {
-//       std::lock_guard lock(mut);
-//       fmp[keys[i]] = rng();
-//     }
-//   });
-//   pool.wait_for_tasks();
-//   cout << "flat_map with std::mutex by hand: " << timer << '\n';
-// }
+  timer.reset();
+  pool.push_loop(keys.size(), [&](size_t l, size_t r) {
+    for (size_t i = l; i < r; i++) {
+      std::lock_guard lock(mut);
+      fmp[keys[i]] = rng();
+    }
+  });
+  pool.wait_for_tasks();
+  cout << "flat_map with std::mutex by hand: " << timer << '\n';
+}
 
-// TEST_CASE("validate in rehash of phmap") {
-//   Timer timer;
+TEST_CASE("validate after rehash of flat_hash_map compared to node_hash_map") {
+  Timer timer;
+  cout << "validation after rehash of flat_hash_map compared to node_hash_map:\n";
+  constexpr int n = 1e6;
+  fmp<int, Data> mp;
+  nodemp<int, Data> nodemp;
 
-//   fmp<int, UP<Data>> mp;
+  nodemp[0] = Data();
+  mp[0] = Data();
+  auto& mp0 = mp.at(0);
+  auto& nodemp0 = nodemp.at(0);
+  timer.reset();
+  for (int i = 1; i < n; i++) {
+    mp[i] = Data();
+  }
+   for (int i = 1; i < n; i++) {
+    mp[i] = Data();
+  }
+  // mp0 will be invalid after rehash but nodemp0 will not
+  REQUIRE_FALSE(std::addressof(mp0) == std::addressof(mp[0]));
+  REQUIRE(std::addressof(nodemp[0]) == std::addressof(nodemp0));
+  cout << '\n';
+}
 
-//   constexpr int n = 1e6;
-//   auto keys = tbs::distinct_vec<int, 1>(n);
-//   vector<RW<Data>> values(n, nullptr);
-//   for (int i = 0; i < n; i++) {
-//     values[i] = new Data;
-//   }
+TEST_CASE("validate in rehash of flat_hash_map") {
+  Timer timer;
+  fmp<int, tbs::NonCopy> mp_nocp;
+  std::unordered_map<int, tbs::NonCopy> stdmp_nocp;
+  fmp<int, tbs::NonMove> mp_nomv;
+  std::unordered_map<int, tbs::NonMove> stdmp_nomv;
+  nodemp<int, tbs::NonCopy> nodemp_nocp;
+  nodemp<int, tbs::NonMove> nodemp_nomv;
 
-//   for (int i = 0; i < n; i++) {
-//     mp[keys[i]] = unique_ptr<Data>{values[i]};
-//   }
+  const int n = 1e6;
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    stdmp_nocp[i] = std::move(tbs::NonCopy());
+  }
+  for (int i = 0; i < n; i++) {
+    mp_nocp[i] = std::move(tbs::NonCopy());
+  }
+  for (int i = 0; i < n; i++) {
+    nodemp_nocp.emplace(i, tbs::NonCopy());
+  }
 
-//   for (int i = 0; i < n; i++) {
-//     REQUIRE(values[i] == mp[keys[i]].get());
-//   }
+  for (int i = 0; i < n; i++) {
+    stdmp_nomv.emplace(i, tbs::NonMove());
+  }
+  // the following code can't pass complile
+  // for (int i = 0; i < n; i++) {
+  //   nodemp_nomv.emplace(i, tbs::NonMove());
+  // }
+  // for (int i = 0; i < n; i++) {
+  //   mp_nomv.emplace(i, tbs::NonMove());
+  // }
 
-//   timer.reset();
-//   int64_t dummy = 0;
-//   for (int i = 0; i < n; i++) {
-//     dummy += mp[keys[i]]->eamcode;
-//   }
-//   // cout << "phmap iterate 1000000 integers: " << timer << '\n';
-// }
+  cout << "flat_hash_map with NonCopy as value: " << timer << '\n';
+}
