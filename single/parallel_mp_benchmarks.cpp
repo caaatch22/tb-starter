@@ -231,7 +231,7 @@ TEST_CASE("benchmark with string as key and value") {
 
   const int n = 1e6;
 
-  auto const keys = tbs::rng_strings(n, 128);
+  auto const keys = tbs::rng_strings(n, 9);
   // auto const keys = tbs::rng_dates(n, "10010321", "90901023");
   auto const values = tbs::rng_strings(n, 128);
 
