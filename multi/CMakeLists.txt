@@ -1,14 +1,13 @@
 cmake_minimum_required(VERSION 3.22.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-project(benchmarks VERSION 0.1.0)
+project(tb-starter-multi VERSION 0.1.0)
 
-# 查找所有子文件夹
-file(GLOB children RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+file(GLOB_RECURSE SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-# 遍历子文件夹
-foreach(child ${children})
-    if(IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${child})
-        add_subdirectory(${child})
-    endif()
+foreach(SRC_FILE ${SRC_FILES})
+    get_filename_component(EXEC_NAME ${SRC_FILE} NAME_WE)
+
+    add_executable(${EXEC_NAME} ${SRC_FILE})
+    target_link_libraries(${EXEC_NAME} ${CONAN_LIBS})
 endforeach()
