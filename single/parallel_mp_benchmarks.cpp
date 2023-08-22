@@ -229,11 +229,11 @@ TEST_CASE("benchmark with string as key and value") {
   fmp<string, string> mp;
   nodemp<string, string> nodemp;
 
-  const int n = 1e6;
+  const int n = 1e5;
 
-  auto const keys = tbs::rng_strings(n, 9);
+  auto const keys = tbs::rng_strings(n, 8);
   // auto const keys = tbs::rng_dates(n, "10010321", "90901023");
-  auto const values = tbs::rng_strings(n, 128);
+  auto const values = tbs::rng_strings(n, 4086);
 
   timer.reset();
   for (int i = 0; i < n; i++) {
