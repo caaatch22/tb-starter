@@ -7,6 +7,7 @@
 #include <iostream>
 #include <memory>
 #include <numeric>
+#include <random>
 #include <ranges>
 #include <set>
 #include <string>
@@ -22,6 +23,9 @@ using namespace std;
 using std::cout;
 using tbs::rng;
 using tbs::Timer;
+
+std::random_device rd;
+std::mt19937 g(rd());
 
 template <typename T>
 using UP = std::unique_ptr<T>;
@@ -50,12 +54,19 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
 
   Timer timer;
 
+  std::vector<pair<int, int>> base;
   std::unordered_map<int, int> stdmp;
   nodemp<int, int> nodemp;
   fmp<int, int> mp;
 
   constexpr int n = 1e6;
-  auto const keys = tbs::distinct_vec<int, 0>(n);
+  auto keys = tbs::distinct_vec<int, 0>(n);
+
+  timer.reset();
+  for (auto const k : keys) {
+    base.push_back({k, rng()});
+  }
+  cout << "vector-push_back: " << timer << '\n';
 
   timer.reset();
   for (auto const k : keys) {
@@ -78,6 +89,12 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
   cout << "iterate over 1000000 integers:" << '\n';
   timer.reset();
   int sum = 0;
+  for (auto const& [_, v] : base) {
+    sum += v;
+  }
+  cout << "vector time: " << timer << ", sum = " << sum << '\n';
+
+  timer.reset();
   for (auto const& [_, v] : mp) {
     sum += v;
   }
@@ -95,6 +112,35 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
   }
   cout << "node-hashtable time: " << timer << ", sum = " << sum << '\n';
   cout << '\n';
+
+  std::ranges::shuffle(keys, g);
+  int cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (mp.contains(key)) {
+      cnt++;
+    }
+  }
+
+  std::cout << "flat_hash_map find: " << timer << " cnt = " << cnt << '\n';
+  cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (stdmp.contains(key)) {
+      cnt++;
+    }
+  }
+  std::cout << "std_hash_map find: " << timer << " cnt = " << cnt << '\n';
+
+  cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (nodemp.contains(key)) {
+      cnt++;
+    }
+  }
+  std::cout << "node_hash_map find: " << timer << " cnt = " << cnt << '\n';
+  std::cout << '\n';
 }
 
 TEST_CASE("flat map reserve", "[inserting 1000000 integers]") {
@@ -102,16 +148,23 @@ TEST_CASE("flat map reserve", "[inserting 1000000 integers]") {
 
   Timer timer;
 
+  std::vector<pair<int, int>> base;
   std::unordered_map<int, int> stdmp;
   fmp<int, int> mp;
   nodemp<int, int> nodemp;
 
+  base.reserve(1e6);
   stdmp.reserve(2e6);
   mp.reserve(2e6);
   nodemp.reserve(2e6);
 
   constexpr int n = 1e6;
-  auto const keys = tbs::distinct_vec<int, 0>(n);
+  auto keys = tbs::distinct_vec<int, 0>(n);
+  timer.reset();
+  for (auto const k : keys) {
+    base.push_back({k, rng()});
+  }
+  cout << "vector with reserve: " << timer << '\n';
 
   timer.reset();
   for (auto const k : keys) {
@@ -159,12 +212,18 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
 
   Timer timer;
 
+  std::vector<std::pair<string, UP<Data>>> base;
   std::unordered_map<string, UP<Data>> stdmp;
   fmp<string, UP<Data>> mp;
   nodemp<string, UP<Data>> nodemp;
 
   constexpr int n = 1e6;
-  auto const keys = tbs::rng_dates(n, "10220120"sv, "90900530"sv);
+  auto keys = tbs::rng_dates(n, "10220120"sv, "90900530"sv);
+
+  auto values_base = vector<RW<Data>>(n);
+  for (int i = 0; i < n; i++) {
+    values_base[i] = new Data;
+  };
 
   auto values1 = vector<RW<Data>>(n);
   for (int i = 0; i < n; i++) {
@@ -180,6 +239,12 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
   for (int i = 0; i < n; i++) {
     values3[i] = new Data;
   };
+
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    base.push_back({keys[i], unique_ptr<Data>{values_base[i]}});
+  }
+  cout << "vector: " << timer << '\n';
 
   timer.reset();
   for (int i = 0; i < n; i++) {
@@ -202,6 +267,11 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
   cout << "iterate over 1000000 strings:" << '\n';
   timer.reset();
   Data sum;
+  for (auto const& [_, v] : base) {
+    sum.eamcode += v->eamcode;
+  }
+  cout << "vector time: " << timer << ", sum = " << sum.eamcode << '\n';
+  timer.reset();
   for (auto const& [_, v] : mp) {
     sum.eamcode += v->eamcode;
   }
@@ -219,12 +289,41 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
   }
   cout << "node-hashtable time: " << timer << ", sum = " << sum.eamcode << '\n';
   cout << '\n';
+
+  std::ranges::shuffle(keys, g);
+  int cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (mp.contains(key)) {
+      cnt++;
+    }
+  }
+
+  std::cout << "flat_hash_map find: " << timer << " cnt = " << cnt << '\n';
+  cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (stdmp.contains(key)) {
+      cnt++;
+    }
+  }
+  std::cout << "std_hash_map find: " << timer << " cnt = " << cnt << '\n';
+
+  cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (nodemp.contains(key)) {
+      cnt++;
+    }
+  }
+  std::cout << "node_hash_map find: " << timer << " cnt = " << cnt << '\n';
+  std::cout << '\n';
 }
 
 TEST_CASE("benchmark with string as key and value") {
-  cout << "inserting 1000000 strings as key and value:\n";
+  cout << "inserting 100000 strings as key and value:\n";
   Timer timer;
-
+  std::vector<pair<string, string>> base;
   std::unordered_map<string, string> stdmp;
   fmp<string, string> mp;
   nodemp<string, string> nodemp;
@@ -233,7 +332,13 @@ TEST_CASE("benchmark with string as key and value") {
 
   auto const keys = tbs::rng_strings(n, 8);
   // auto const keys = tbs::rng_dates(n, "10010321", "90901023");
-  auto const values = tbs::rng_strings(n, 4086);
+  auto const values = tbs::rng_strings(n, 4096);
+
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    base.push_back({keys[i], values[i]});
+  }
+  cout << "vector: " << timer << '\n';
 
   timer.reset();
   for (int i = 0; i < n; i++) {
@@ -258,13 +363,19 @@ TEST_CASE("benchmark with big value") {
   cout << "inserting 1000000 integers as key and big data as value:\n";
 
   Timer timer;
-
+  std::vector<pair<int64_t, BigMockData>> base;
   std::unordered_map<int64_t, BigMockData> stdmp;
   fmp<int64_t, BigMockData> mp;
   nodemp<int64_t, BigMockData> nodemp;
 
   const int n = 1e6;
   auto const keys = tbs::distinct_vec<int, 0>(n);
+
+  timer.reset();
+  for (auto const k : keys) {
+    base.push_back({k, BigMockData()});
+  }
+  cout << "vector: " << timer << '\n';
 
   timer.reset();
   for (auto const k : keys) {
@@ -371,8 +482,8 @@ TEST_CASE("parallel-hash-map") {
   phmap::parallel_flat_hash_map<
       int, int, phmap::priv::hash_default_hash<int>,
       phmap::priv::hash_default_eq<int>,
-      phmap::priv::Allocator<std::pair<int const, int>>, 4,
-      std::shared_mutex> smp;
+      phmap::priv::Allocator<std::pair<int const, int>>, 4, std::shared_mutex>
+      smp;
 
   constexpr int n = 1e6;
   auto const keys = tbs::distinct_vec<int, 0>(n);
@@ -413,8 +524,7 @@ TEST_CASE("parallel-hash-map") {
 
   auto const rkeys = tbs::rng_vec<int, 0, n>(n);
   auto s = std::set<int>(rkeys.begin(), rkeys.end());
-  cout << "all size = " << rkeys.size() << " distinct key size = " <<
-  s.size()
+  cout << "all size = " << rkeys.size() << " distinct key size = " << s.size()
        << '\n';
   timer.reset();
   pool.push_loop(keys.size(), [&](size_t l, size_t r) {
@@ -447,7 +557,8 @@ TEST_CASE("parallel-hash-map") {
 
 TEST_CASE("validate after rehash of flat_hash_map compared to node_hash_map") {
   Timer timer;
-  cout << "validation after rehash of flat_hash_map compared to node_hash_map:\n";
+  cout << "validation after rehash of flat_hash_map compared to "
+          "node_hash_map:\n";
   constexpr int n = 1e6;
   fmp<int, Data> mp;
   nodemp<int, Data> nodemp;
@@ -460,7 +571,7 @@ TEST_CASE("validate after rehash of flat_hash_map compared to node_hash_map") {
   for (int i = 1; i < n; i++) {
     mp[i] = Data();
   }
-   for (int i = 1; i < n; i++) {
+  for (int i = 1; i < n; i++) {
     mp[i] = Data();
   }
   // mp0 will be invalid after rehash but nodemp0 will not
