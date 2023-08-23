@@ -1,6 +1,7 @@
 #define CATCH_CONFIG_MAIN
 
 #include <parallel_hashmap/phmap.h>
+#include <ankerl/unordered_dense.h>
 #include <BS_thread_pool.hpp>
 #include <algorithm>
 #include <catch2/catch.hpp>
@@ -58,6 +59,7 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
   std::unordered_map<int, int> stdmp;
   nodemp<int, int> nodemp;
   fmp<int, int> mp;
+  ankerl::unordered_dense::map<int, int> dmp;
 
   constexpr int n = 1e6;
   auto keys = tbs::distinct_vec<int, 0>(n);
@@ -67,6 +69,12 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
     base.push_back({k, rng()});
   }
   cout << "vector-push_back: " << timer << '\n';
+
+  timer.reset();
+  for (auto const k : keys) {
+    dmp[k] = rng();
+  }
+  cout << "unordered_dense: " << timer << '\n';
 
   timer.reset();
   for (auto const k : keys) {
@@ -95,6 +103,12 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
   cout << "vector time: " << timer << ", sum = " << sum << '\n';
 
   timer.reset();
+  for (auto const& [_, v] : dmp) {
+    sum += v;
+  }
+  cout << "unordered_dense time: " << timer << ", sum = " << sum << '\n';
+
+  timer.reset();
   for (auto const& [_, v] : mp) {
     sum += v;
   }
@@ -115,6 +129,15 @@ TEST_CASE("benchmark integer", "[inserting 1000000 integers]") {
 
   std::ranges::shuffle(keys, g);
   int cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (dmp.contains(key)) {
+      cnt++;
+    }
+  }
+  std::cout << "unordered_dense find: " << timer << " cnt = " << cnt << '\n';
+  cnt = 0;
+
   timer.reset();
   for (auto const& key : keys) {
     if (mp.contains(key)) {
@@ -152,8 +175,10 @@ TEST_CASE("flat map reserve", "[inserting 1000000 integers]") {
   std::unordered_map<int, int> stdmp;
   fmp<int, int> mp;
   nodemp<int, int> nodemp;
+  ankerl::unordered_dense::map<int, int> dmp;
 
   base.reserve(1e6);
+  dmp.reserve(2e6);
   stdmp.reserve(2e6);
   mp.reserve(2e6);
   nodemp.reserve(2e6);
@@ -165,6 +190,12 @@ TEST_CASE("flat map reserve", "[inserting 1000000 integers]") {
     base.push_back({k, rng()});
   }
   cout << "vector with reserve: " << timer << '\n';
+
+  timer.reset();
+  for (auto const k : keys) {
+    dmp[k] = rng();
+  }
+  cout << "unordered_dense with reserve: " << timer << '\n';
 
   timer.reset();
   for (auto const k : keys) {
@@ -187,6 +218,11 @@ TEST_CASE("flat map reserve", "[inserting 1000000 integers]") {
   cout << "iterate over 1000000 integers:" << '\n';
   timer.reset();
   int sum = 0;
+  for (auto const& [_, v] : dmp) {
+    sum += v;
+  }
+  cout << "unordered_dense time: " << timer << ", sum = " << sum << '\n';
+  timer.reset();
   for (auto const& [_, v] : mp) {
     sum += v;
   }
@@ -214,6 +250,7 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
 
   std::vector<std::pair<string, UP<Data>>> base;
   std::unordered_map<string, UP<Data>> stdmp;
+  ankerl::unordered_dense::map<string, UP<Data>> dmp;
   fmp<string, UP<Data>> mp;
   nodemp<string, UP<Data>> nodemp;
 
@@ -240,11 +277,22 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
     values3[i] = new Data;
   };
 
+  auto values4 = vector<RW<Data>>(n);
+  for (int i = 0; i < n; i++) {
+    values4[i] = new Data;
+  };
+
   timer.reset();
   for (int i = 0; i < n; i++) {
     base.push_back({keys[i], unique_ptr<Data>{values_base[i]}});
   }
   cout << "vector: " << timer << '\n';
+
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    dmp[keys[i]] = unique_ptr<Data>{values4[i]};
+  }
+  cout << "unordered_dense: " << timer << '\n';
 
   timer.reset();
   for (int i = 0; i < n; i++) {
@@ -272,6 +320,11 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
   }
   cout << "vector time: " << timer << ", sum = " << sum.eamcode << '\n';
   timer.reset();
+  for (auto const& [_, v] : dmp) {
+    sum.eamcode += v->eamcode;
+  }
+  cout << "unordered_dense time: " << timer << ", sum = " << sum.eamcode << '\n';
+  timer.reset();
   for (auto const& [_, v] : mp) {
     sum.eamcode += v->eamcode;
   }
@@ -298,8 +351,15 @@ TEST_CASE("benchmark string", "[inserting 1000000 strings]") {
       cnt++;
     }
   }
-
   std::cout << "flat_hash_map find: " << timer << " cnt = " << cnt << '\n';
+  cnt = 0;
+  timer.reset();
+  for (auto const& key : keys) {
+    if (dmp.contains(key)) {
+      cnt++;
+    }
+  }
+  std::cout << "unordered_dense find: " << timer << " cnt = " << cnt << '\n';
   cnt = 0;
   timer.reset();
   for (auto const& key : keys) {
@@ -327,8 +387,11 @@ TEST_CASE("benchmark with string as key and value") {
   std::unordered_map<string, string> stdmp;
   fmp<string, string> mp;
   nodemp<string, string> nodemp;
-
+  ankerl::unordered_dense::map<string, string> dmp;
   const int n = 1e5;
+  dmp.reserve(2 * n);
+  mp.reserve(2 * n);
+  stdmp.reserve(2 * n);
 
   auto const keys = tbs::rng_strings(n, 8);
   // auto const keys = tbs::rng_dates(n, "10010321", "90901023");
@@ -339,6 +402,12 @@ TEST_CASE("benchmark with string as key and value") {
     base.push_back({keys[i], values[i]});
   }
   cout << "vector: " << timer << '\n';
+
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    dmp[keys[i]] = values[i];
+  }
+  cout << "unordered_dense: " << timer << '\n';
 
   timer.reset();
   for (int i = 0; i < n; i++) {
@@ -367,6 +436,7 @@ TEST_CASE("benchmark with big value") {
   std::unordered_map<int64_t, BigMockData> stdmp;
   fmp<int64_t, BigMockData> mp;
   nodemp<int64_t, BigMockData> nodemp;
+  ankerl::unordered_dense::map<int64_t, BigMockData> dmp;
 
   const int n = 1e6;
   auto const keys = tbs::distinct_vec<int, 0>(n);
@@ -376,6 +446,12 @@ TEST_CASE("benchmark with big value") {
     base.push_back({k, BigMockData()});
   }
   cout << "vector: " << timer << '\n';
+
+  timer.reset();
+  for (auto const k : keys) {
+    dmp[k] = BigMockData();
+  }
+  cout << "unordered_dense: " << timer << '\n';
 
   timer.reset();
   for (auto const k : keys) {
@@ -394,7 +470,6 @@ TEST_CASE("benchmark with big value") {
     nodemp[k] = BigMockData();
   }
   cout << "node-hashtable: " << timer << '\n';
-
   cout << '\n';
 }
 

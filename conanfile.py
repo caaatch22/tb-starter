@@ -30,6 +30,7 @@ class GsfConan(ConanFile):
         self.requires("date/3.0.1")
         self.requires("catch2/2.13.9")
         self.requires("parallel-hashmap/1.37")
+        self.requires("unordered_dense/4.1.0")
         self.requires("tl-expected/20190710")
 
     # def imports(self):
