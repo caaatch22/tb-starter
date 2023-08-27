@@ -57,6 +57,8 @@ void test1() {
 void test2() {
   cout << "contagious" << '\n';
   std::pmr::vector<int>(1090);
+  std::array<std::byte, 4096> buf;
+  std::pmr::monotonic_buffer_resource(buf.data(), buf.size());
 }
 
 int main() {
