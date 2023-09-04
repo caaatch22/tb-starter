@@ -13,11 +13,11 @@ using std::vector;
 using tbs::Timer;
 
 void validTest() {
-  constexpr int n = 100;
+  constexpr int n = 100'000;
   Timer<tbs::micro> timer;
   ThreadSafeQueue<string> q;
   BS::thread_pool pool(8);
-  vector<string> dates = tbs::rng_dates(n, "20220104", "49870107");
+  vector<string> dates = tbs::rng_dates(n, "20220104", "99870107");
 
   timer.reset();
   pool.push_loop(dates.size(), [&](size_t l, size_t r) {
@@ -28,7 +28,7 @@ void validTest() {
   pool.wait_for_tasks();
   std::cout << timer << '\n';
 
-  LockFreeRingBuffer<string> rb;
+  LockFreeRingBuffer<string> rb(n);
   timer.reset();
   pool.push_loop(dates.size(), [&](size_t l, size_t r) {
     for (size_t i = l; i < r; i++) {
@@ -42,5 +42,6 @@ void validTest() {
 
 int main() {
   validTest();
+
   return 0;
 }
