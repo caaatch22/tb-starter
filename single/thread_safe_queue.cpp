@@ -28,7 +28,7 @@ void validTest() {
   pool.wait_for_tasks();
   std::cout << timer << '\n';
 
-  LockFreeRingBuffer<string> rb(n);
+  LockFreeRingBuffer<string> rb;
   timer.reset();
   pool.push_loop(dates.size(), [&](size_t l, size_t r) {
     for (size_t i = l; i < r; i++) {

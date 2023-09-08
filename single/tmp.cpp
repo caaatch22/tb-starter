@@ -1,4 +1,6 @@
 #include <algorithm>
+#include <chrono>
+#include <concepts>
 #include <execution>
 #include <iostream>
 #include <numeric>
@@ -6,9 +8,6 @@
 #include <ranges>
 #include <string>
 #include <vector>
-
-#include <chrono>
-#include <concepts>
 
 using nano = std::chrono::nanoseconds;
 using micro = std::chrono::microseconds;
@@ -63,7 +62,9 @@ int main() {
   const int n = 1e6;
   std::vector<int> a(n);
   std::ranges::generate(a, rng);
+  // std::sort(std::execution::par_unseq, a.begin(), a.end());
   std::ranges::sort(a);
+  // std::sort(a.begin(), a.end());
   std::cout << timer << '\n';
   return 0;
 }
