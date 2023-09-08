@@ -1,14 +1,10 @@
-#include <algorithm>
-#include <execution>
-#include <iostream>
-#include <numeric>
-#include <random>
-#include <ranges>
-#include <string>
-#include <vector>
-
+#include <BS_thread_pool.hpp>
 #include <chrono>
-#include <concepts>
+#include <iostream>
+#include <thread>
+#include <vector>
+using namespace std;
+namespace tbs {
 
 using nano = std::chrono::nanoseconds;
 using micro = std::chrono::microseconds;
@@ -56,14 +52,56 @@ class Timer {
   std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
 };
 
-std::mt19937 rng(std::random_device{}());
+}  // namespace tbs
+using tbs::Timer;
+
+int64_t HDC() {
+  return std::thread::hardware_concurrency();
+}
+
+int64_t LocalId() {
+  static const int64_t HD = std::thread::hardware_concurrency();
+  const int64_t suffix =
+      ((std::hash<std::thread::id>{}(std::this_thread::get_id()) % HD) &
+       0xFFLL);
+  return (std::chrono::system_clock::now().time_since_epoch().count() << 8) |
+         (suffix);
+}
+
+int64_t Origin() {
+  return std::chrono::system_clock::now().time_since_epoch().count();
+}
 
 int main() {
-  Timer timer;
-  const int n = 1e6;
+  const int n = 1e5;
   std::vector<int> a(n);
-  std::ranges::generate(a, rng);
-  std::ranges::sort(a);
+  std::vector<int> b(n);
+  std::vector<int> c(n);
+  Timer timer;
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    a[i] = LocalId();
+  }
   std::cout << timer << '\n';
-  return 0;
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    b[i] = Origin();
+  }
+  std::cout << timer << '\n';
+  timer.reset();
+  for (int i = 0; i < n; i++) {
+    c[i] = HDC();
+  }
+
+  BS::thread_pool pool(32);
+  for (int i = 0; i < 32; i++) {
+    // std::cout << thread::hardware_concurrency() << '\n';
+    auto idx = (std::hash<std::thread::id>{}(std::this_thread::get_id()) % 16);
+    pool.push_task([=]() {
+      std::cout << std::this_thread::get_id() << ": " << idx << '\n';
+    });
+  }
+  pool.wait_for_tasks();
+
+  std::cout << timer << '\n';
 }
