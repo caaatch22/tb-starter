@@ -5,7 +5,7 @@ test and benchmark quick start!
 ## Build
 conan >= 1.60.2  // which support gcc13
 
-gcc 13.1 required.
+gcc 11 required.
 
 ```sh
 mkdir -p build
