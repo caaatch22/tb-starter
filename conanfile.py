@@ -32,6 +32,7 @@ class GsfConan(ConanFile):
         self.requires("parallel-hashmap/1.37")
         self.requires("unordered_dense/4.1.0")
         self.requires("tl-expected/20190710")
+        self.requires("range-v3/0.12.0")
 
     # def imports(self):
         # self.copy("*.so", dst="lib", src="lib", root_package="gsf2*")
