@@ -37,10 +37,5 @@ int main() {
   static_assert(sizeof(E) == 8);
   static_assert(sizeof(F) == 8);
 
-  std::vector<int> a{1, 2, 1, 1};
-  std::vector<int> b{1, 2, 1, 1};
-
-  std::copy(a.begin(), a.end(), b.begin());
-
   return 0;
 }

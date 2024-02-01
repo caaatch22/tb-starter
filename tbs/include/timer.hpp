@@ -1,57 +1,50 @@
 #ifndef BENCH_TIMER_HPP
 #define BENCH_TIEMR_HPP
 
+#include <fmt/format.h>
+
 #include <chrono>
 #include <concepts>
 
+#include "mp.hpp"
+
 namespace tbs {
 
-using nano = std::chrono::nanoseconds;
-using micro = std::chrono::microseconds;
-using mill = std::chrono::milliseconds;
-using sec = std::chrono::seconds;
-using min = std::chrono::minutes;
-using hour = std::chrono::hours;
-
-template <typename D>
-concept Dur = std::is_same_v<D, nano> or std::is_same_v<D, micro> or
-              std::is_same_v<D, mill> or std::is_same_v<D, sec> or
-              std::is_same_v<D, min> or std::is_same_v<D, hour>;
-
-template <Dur dur = mill>
-class Timer {
+class [[nodiscard]] Timer {
  public:
-  Timer() : start_time_(std::chrono::high_resolution_clock::now()) {}
+  Timer() noexcept { rdtsc(); }
 
-  void reset() { start_time_ = std::chrono::high_resolution_clock::now(); }
-
-  double elapsed() const {
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<dur>(end_time - start_time_);
-    return duration.count();
+  [[nodiscard]] auto operator<=>(const Timer &rhs) const noexcept {
+    return qw <=> rhs.qw;
   }
 
-  friend std::ostream& operator<<(std::ostream& os, Timer const& timer) {
-    if constexpr (std::is_same_v<dur, nano>) {
-      os << timer.elapsed() << " ns";
-    } else if constexpr (std::is_same_v<dur, micro>) {
-      os << timer.elapsed() << " us";
-    } else if constexpr (std::is_same_v<dur, mill>) {
-      os << timer.elapsed() << " ms";
-    } else if constexpr (std::is_same_v<dur, sec>) {
-      os << timer.elapsed() << " s";
-    } else if constexpr (std::is_same_v<dur, min>) {
-      os << timer.elapsed() << " min";
-    } else if constexpr (std::is_same_v<dur, hour>) {
-      os << timer.elapsed() << " h";
-    }
-    return os;
+  [[nodiscard]] auto elapsed() const noexcept -> std::chrono::duration<double> {
+    Timer now;
+    return std::chrono::duration<double>((now.qw - qw) / 1e9);
   }
+
+  void reset() noexcept { rdtsc(); }
 
  private:
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
+  union {
+    uint32_t dw[2];
+    uint64_t qw;
+  };
+
+  inline void rdtsc() noexcept {
+    asm volatile("rdtsc\n\t" : "=a"(dw[0]), "=d"(dw[1]));
+  }
 };
 
 }  // namespace tbs
+
+template <>
+struct fmt::formatter<tbs::Timer> : formatter<double> {
+  template <typename FormatContext>
+  auto format(const tbs::Timer &timer, FormatContext &ctx) const
+      -> decltype(ctx.out()) {
+    return fmt::formatter<double>::format(timer.elapsed().count(), ctx);
+  }
+};
 
 #endif  // BENCH_TIMER_HPP

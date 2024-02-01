@@ -7,7 +7,8 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "../tbs/include/timer.hpp"
+
+#include "timer.hpp"
 
 using dataset_sequence_type = std::vector<std::vector<std::string>>;
 auto read_csv(std::filesystem::path file)
@@ -46,16 +47,15 @@ auto read_csv_v3(std::filesystem::path file)
 }
 
 int main() {
-  std::filesystem::path chip(
-      "/home/ubuntu/workspace/tb-starter/test/test_data/chip_dataset.csv");
-  tbs::Timer<tbs::micro> timer;
-  auto result = read_csv(chip);
-  std::cout << timer << '\n';
+  std::filesystem::path chip("../test/test_data/chip_dataset.csv");
+  tbs::Timer timer;
+  auto result = read_csv_v3(chip);
+  fmt::print("{} s\n", timer);
   std::cout << result.value().size() << '\n';
   timer.reset();
 
-  result = read_csv_v3(chip);
-  std::cout << timer << '\n';
+  result = read_csv(chip);
+  fmt::print("{} s\n", timer);
   std::cout << result.value().size() << '\n';
   return 0;
 }

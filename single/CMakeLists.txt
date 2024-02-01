@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(tb-starter-single VERSION 0.1.0)
 
+include_directories(${CMAKE_PROGRAM_PATH}/tbs/include)
 file(GLOB_RECURSE SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 foreach(SRC_FILE ${SRC_FILES})

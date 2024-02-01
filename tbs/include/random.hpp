@@ -1,5 +1,5 @@
-#ifndef TBS_TIMER_HPP
-#define TBS_TIEMR_HPP
+#ifndef TBS_RANDOM_HPP
+#define TBS_RAMDOM_HPP
 
 #include <algorithm>
 #include <random>
@@ -8,6 +8,7 @@
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
+
 #include "utils.hpp"
 
 namespace tbs {
@@ -16,39 +17,23 @@ static std::random_device seed_random_device;
 static std::mt19937 engine(seed_random_device());
 static std::mt19937_64 engine64(seed_random_device());
 
-inline static int rng() {
-  return engine();
+inline static int rng() { return engine(); }
+
+inline static int rng(int low, int high) {
+  return engine() % (high - low) + low;
 }
 
-inline static int rng(int l, int r) {
-  return engine() % (r - l) + l;
+inline static int64_t rng64() { return engine64(); }
+
+inline static int64_t rng64(int64_t low, int64_t high) {
+  return engine() % (high - low) + low;
 }
 
-inline static int64_t rng64() {
-  return engine64();
-}
-
-inline static int64_t rng64(int64_t l, int64_t r) {
-  return engine64() % (r - l) + l;
-}
-
-template <typename T, int64_t L, int64_t R>
-  requires std::is_integral_v<T> and (R - L > 0)
-static std::vector<T> rng_vec(size_t size) {
-  static_assert(!(std::is_unsigned_v<T> && L < 0),
-                "L must no less than 0 when T is unsigned");
-  constexpr int64_t N = R - L;
+template <std::integral T>
+static std::vector<T> rng_vec(size_t size, int64_t low, int64_t high) {
+  const int64_t N = high - low;
   auto res = std::vector<T>(size);
-  std::ranges::generate(res, [&] { return L + engine64() % N; });
-  return res;
-}
-
-template <typename T>
-  requires std::is_integral_v<T>
-static std::vector<T> rng_vec(size_t size, int64_t l, int64_t r) {
-  const int64_t N = r - l;
-  auto res = std::vector<T>(size);
-  std::ranges::generate(res, [&] { return l + engine64() % N; });
+  std::ranges::generate(res, [&] { return low + engine64() % N; });
   return res;
 }
 
@@ -73,8 +58,7 @@ static std::vector<T> distinct_vec(size_t size, int64_t l) {
 }
 
 ///
-static std::vector<std::string> rng_dates(size_t size,
-                                          std::string_view l,
+static std::vector<std::string> rng_dates(size_t size, std::string_view l,
                                           std::string_view r) {
   std::vector<std::string> res(size);
   auto const lymd = svtoymd(l);
@@ -95,7 +79,7 @@ static std::string rng_string(size_t len) {
 
 static std::vector<std::string> rng_strings(size_t size, size_t len) {
   std::vector<std::string> res(size);
-  for (auto& s : res) {
+  for (auto &s : res) {
     s = rng_string(len);
   }
   return res;
