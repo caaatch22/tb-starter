@@ -13,6 +13,8 @@ yaml-cpp/0.8.0
 nlohmann_json/3.11.3
 boost/1.84.0
 
+eigen/3.4.0
+openblas/0.3.26
 bshoshany-thread-pool/3.5.0
 parallel-hashmap/1.37
 unordered_dense/4.4.0

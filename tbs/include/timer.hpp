@@ -10,31 +10,47 @@
 
 namespace tbs {
 
-class [[nodiscard]] Timer {
+class Timer {
  public:
-  Timer() noexcept { rdtsc(); }
-
-  [[nodiscard]] auto operator<=>(const Timer &rhs) const noexcept {
-    return qw <=> rhs.qw;
-  }
+  Timer() noexcept : start(std::chrono::high_resolution_clock::now()) {}
 
   [[nodiscard]] auto elapsed() const noexcept -> std::chrono::duration<double> {
-    Timer now;
-    return std::chrono::duration<double>((now.qw - qw) / 1e9);
+    const auto now = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration<double>(now - start);
   }
 
-  void reset() noexcept { rdtsc(); }
+  void reset() noexcept { start = std::chrono::high_resolution_clock::now(); }
 
  private:
-  union {
-    uint32_t dw[2];
-    uint64_t qw;
-  };
-
-  inline void rdtsc() noexcept {
-    asm volatile("rdtsc\n\t" : "=a"(dw[0]), "=d"(dw[1]));
-  }
+  std::chrono::time_point<std::chrono::high_resolution_clock> start;
 };
+
+// class Timer {
+//  public:
+//   Timer() noexcept { rdtsc(); }
+
+//   [[nodiscard]] auto operator<=>(const Timer &rhs) const noexcept {
+//     return qw <=> rhs.qw;
+//   }
+
+//   [[nodiscard]] auto elapsed() const noexcept ->
+//   std::chrono::duration<double> {
+//     Timer now;
+//     return std::chrono::duration<double>((now.qw - qw) / 1e9);
+//   }
+
+//   void reset() noexcept { rdtsc(); }
+
+//  private:
+//   union {
+//     uint32_t dw[2];
+//     uint64_t qw;
+//   };
+
+//   inline void rdtsc() noexcept {
+//     asm volatile("rdtsc\n\t" : "=a"(dw[0]), "=d"(dw[1]));
+//   }
+// };
 
 }  // namespace tbs
 

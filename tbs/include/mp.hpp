@@ -1,3 +1,6 @@
+#ifndef TBS_MP_HPP
+#define TBS_MP_HPP
+
 #include <concepts>
 #include <iostream>
 #include <ranges>
@@ -15,4 +18,6 @@ concept printable = requires(T t, std::ostream &os) {
   { os << t } -> std::same_as<std::ostream &>;
 };
 
-} // namespace tbs
+}  // namespace tbs
+
+#endif  // TBS_MP_HPP

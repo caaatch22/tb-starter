@@ -29,6 +29,10 @@ inline static int64_t rng64(int64_t low, int64_t high) {
   return engine() % (high - low) + low;
 }
 
+inline static double rng_double() {
+  return static_cast<double>(engine()) / engine.max();
+}
+
 template <std::integral T>
 static std::vector<T> rng_vec(size_t size, int64_t low, int64_t high) {
   const int64_t N = high - low;
