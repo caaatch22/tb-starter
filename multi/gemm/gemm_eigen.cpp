@@ -10,7 +10,7 @@ using namespace Eigen;
 
 int main() {
   // 矩阵大小
-  int matrix_size = 1600;
+  int matrix_size = 10000;
 
   // 初始化矩阵 A 和 B，元素范围在 [0, 1] 之间
   MatrixXd A = MatrixXd::Random(matrix_size, matrix_size);
@@ -24,11 +24,12 @@ int main() {
   auto t1 = std::chrono::steady_clock::now();
   C = A * B;
   auto t2 = std::chrono::steady_clock::now();
-  fmt::print(
-      "gemm_eigen: {} s\n",
+  double time =
       (double)std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1)
-              .count() /
-          1000000.0f);
+          .count() /
+      1000000.0f;
+  fmt::print("gemm_eigen: {:.3f} s, Glops: {:.3f}\n", time,
+             2.0f * matrix_size * matrix_size * matrix_size / time / 1e9);
 
   std::cout << C.block(0, 0, 2, 2) << std::endl;
 

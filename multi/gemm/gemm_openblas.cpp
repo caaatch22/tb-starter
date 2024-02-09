@@ -1,11 +1,12 @@
 #include <cblas.h>
 
+#include <chrono>
 #include <ctime>
 #include <iostream>
 
 int main() {
   // 矩阵大小
-  int matrix_size = 1600;
+  int matrix_size = 10000;
 
   // 初始化矩阵 A 和 B，元素范围在 [0, 1] 之间
   double* A = new double[matrix_size * matrix_size];
@@ -22,18 +23,23 @@ int main() {
   }
 
   // 执行矩阵乘法并记录执行时间
-  clock_t start_time = clock();
+  auto start = std::chrono::high_resolution_clock::now();
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, matrix_size,
               matrix_size, matrix_size, 1.0, A, matrix_size, B, matrix_size,
               0.0, C, matrix_size);
-  clock_t end_time = clock();
-
+  auto end = std::chrono::high_resolution_clock::now();
   // 计算矩阵乘法的执行时间
-  double execution_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+  double execution_time =
+      std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
+          .count() /
+      1000.0;
 
   // 打印执行时间和部分结果
-  std::cout << "Matrix multiplication executed in " << execution_time
-            << " seconds." << std::endl;
+  std::cout << "gemm_openblas: " << execution_time
+            << " s, Glops: " << std::fixed
+            << (2.0 * matrix_size * matrix_size * matrix_size / execution_time /
+                1e9)
+            << std::endl;
   std::cout << "Partial result:" << std::endl;
   for (int i = 0; i < 2; i++) {
     for (int j = 0; j < 2; j++) {

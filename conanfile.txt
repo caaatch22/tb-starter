@@ -12,6 +12,7 @@ catch2/2.13.9
 yaml-cpp/0.8.0
 nlohmann_json/3.11.3
 boost/1.84.0
+jfalcou-eve/v2023.02.15
 
 eigen/3.4.0
 openblas/0.3.26
