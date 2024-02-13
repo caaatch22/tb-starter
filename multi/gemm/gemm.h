@@ -11,6 +11,7 @@ void gemm(Matrix& C, Matrix const& A, Matrix const& B) {
 
   static constexpr size_t SIMD_SIZE = stdx::native_simd<float>::size();
   static constexpr size_t BLOCK_SIZE = 64;
+  fmt::print("SIMD_SIZE: {}, BLOCK_SIZE: {}\n", SIMD_SIZE, BLOCK_SIZE);
   alignas(64) static float local_a[BLOCK_SIZE][BLOCK_SIZE];
   alignas(64) static float local_b[BLOCK_SIZE][BLOCK_SIZE];
   alignas(64) static float local_c[BLOCK_SIZE][BLOCK_SIZE];

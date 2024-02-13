@@ -2,9 +2,9 @@ import torch
 import time
 
 # 使用GPU进行计算，如果可用
-device = torch.device("cpu")
+device = torch.device("cuda")
 print(device)
-matrix_size = 10000
+matrix_size = 1024 * 16
 # 创建两个10000x10000的随机矩阵
 A = torch.rand(matrix_size, matrix_size, device=device)
 B = torch.rand(matrix_size, matrix_size, device=device)
