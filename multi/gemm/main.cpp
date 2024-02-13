@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "gemm.h"
 #include "gemm0.h"
 #include "gemm1.h"
 #include "gemm2.h"
@@ -58,12 +59,12 @@ int main() {
   // check_equal(C0, C3);
   // auto const C4 = run(C, A, B, gemm4, 4, timer);
   // check_equal(C1, C4);
-
-  auto const C5 = run(C, A, B, gemm5, 5, timer);
+  // auto const C5 = run(C, A, B, gemm5, 5, timer);
   // check_equal(C5, C1);
   auto const C6 = run(C, A, B, gemm6, 6, timer);
+  auto const Cfinal = run(C, A, B, gemm, 7, timer);
   // try {
-  check_equal(C6, C5);
+  check_equal(C6, Cfinal);
   // } catch (std::exception const& e) {
   //   fmt::print("C6 != C1\n");
   // }

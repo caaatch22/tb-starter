@@ -90,7 +90,7 @@ class Matrix {
     }
   }
 
- private:
+  //  private:
   size_t m_;
   size_t n_;
   alignas(64) float* data_;
