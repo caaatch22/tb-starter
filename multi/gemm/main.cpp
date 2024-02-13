@@ -59,11 +59,11 @@ int main() {
   // auto const C4 = run(C, A, B, gemm4, 4, timer);
   // check_equal(C1, C4);
 
-  // auto const C5 = run(C, A, B, gemm5, 5, timer);
+  auto const C5 = run(C, A, B, gemm5, 5, timer);
   // check_equal(C5, C1);
   auto const C6 = run(C, A, B, gemm6, 6, timer);
   // try {
-  //   check_equal(C6, C1);
+  check_equal(C6, C5);
   // } catch (std::exception const& e) {
   //   fmt::print("C6 != C1\n");
   // }

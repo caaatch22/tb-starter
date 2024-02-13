@@ -1,11 +1,15 @@
 #include <omp.h>
 
-#include <eve/eve.hpp>
+#include <experimental/simd>
 
 #include "gemm_utils.h"
 
+namespace stdx = std::experimental;
+
 void gemm6(Matrix& C, Matrix const& A, Matrix const& B) {
+  static constexpr size_t SIMD_SIZE = stdx::native_simd<float>::size();
   static constexpr size_t BLOCK_SIZE = 64;
+  fmt::print("SIMD_SIZE: {}, BLOCK_SIZE: {}\n", SIMD_SIZE, BLOCK_SIZE);
   alignas(64) static float local_a[BLOCK_SIZE][BLOCK_SIZE];
   alignas(64) static float local_b[BLOCK_SIZE][BLOCK_SIZE];
   alignas(64) static float local_c[BLOCK_SIZE][BLOCK_SIZE];
@@ -31,12 +35,15 @@ void gemm6(Matrix& C, Matrix const& A, Matrix const& B) {
     for (size_t bj = 0; bj < aj_block_num; bj++) {
       // Clear localC.
       for (size_t i = 0; i < BLOCK_SIZE; i++) {
-        // #pragma omp simd
+#pragma omp simd
+        // #pragma omp for simd
         // for (size_t j = 0; j < BLOCK_SIZE; j++) {
         //   local_c[i][j] = 0.0f;
         // }
-        for (size_t j = 0; j < BLOCK_SIZE; j += 8) {
-          _mm256_storeu_ps(&local_c[i][j], _mm256_setzero_ps());
+        for (size_t j = 0; j < BLOCK_SIZE; j += SIMD_SIZE) {
+          constexpr static stdx::native_simd<float> zero = 0.0f;
+          zero.copy_to(&local_c[i][j], stdx::element_aligned);
+          // _mm256_storeu_ps(&local_c[i][j], _mm256_setzero_ps());
         }
       }
       for (size_t bk = 0; bk < bk_block_num; bk++) {
@@ -62,12 +69,19 @@ void gemm6(Matrix& C, Matrix const& A, Matrix const& B) {
             // for (size_t j = 0; j < BLOCK_SIZE; j++) {
             //   local_c[i][j] += local_a[i][k] * local_b[k][j];
             // }
-            __m256 a = _mm256_set1_ps(local_a[i][k]);
-            for (size_t j = 0; j < BLOCK_SIZE; j += 8) {
-              __m256 b = _mm256_loadu_ps(&local_b[k][j]);
-              __m256 c = _mm256_loadu_ps(&local_c[i][j]);
-              c = _mm256_fmadd_ps(a, b, c);
-              _mm256_storeu_ps(&local_c[i][j], c);
+            stdx::native_simd<float> a = local_a[i][k];
+            // __m256 a = _mm256_set1_ps(local_a[i][k]);
+            for (size_t j = 0; j < BLOCK_SIZE; j += SIMD_SIZE) {
+              stdx::native_simd<float> b;
+              b.copy_from(&local_b[k][j], stdx::element_aligned);
+              stdx::native_simd<float> c;
+              c.copy_from(&local_c[i][j], stdx::element_aligned);
+              c += a * b;
+              c.copy_to(&local_c[i][j], stdx::element_aligned);
+              // __m256 b = _mm256_loadu_ps(&local_b[k][j]);
+              // __m256 c = _mm256_loadu_ps(&local_c[i][j]);
+              // c = _mm256_fmadd_ps(a, b, c);
+              // _mm256_storeu_ps(&local_c[i][j], c);
             }
           }
         }
@@ -75,11 +89,16 @@ void gemm6(Matrix& C, Matrix const& A, Matrix const& B) {
 
       for (size_t i = 0; i < BLOCK_SIZE; i++) {
         // #pragma omp simd
-        for (size_t j = 0; j < BLOCK_SIZE; j += 8) {
+
+        for (size_t j = 0; j < BLOCK_SIZE; j += SIMD_SIZE) {
           size_t const cx = bi * BLOCK_SIZE + i;
           size_t const cy = bj * BLOCK_SIZE + j;
-          _mm256_storeu_ps(&aligned_c(cx, cy), _mm256_loadu_ps(&local_c[i][j]));
-          // aligned_c(cx, cy) = local_c[i][j];
+          stdx::native_simd<float> c;
+          c.copy_from(&local_c[i][j], stdx::element_aligned);
+          c.copy_to(&aligned_c(cx, cy), stdx::element_aligned);
+          // _mm256_storeu_ps(&aligned_c(cx, cy),
+          // _mm256_loadu_ps(&local_c[i][j])); aligned_c(cx, cy) =
+          // local_c[i][j];
         }
       }
     }
